@@ -30,6 +30,9 @@ app.get('/certificate', function (req, res) {
 // Punto de acceso para recibir las facturas
 app.post('/api', function (req, res) {
     //COSAS PARA FACTURAS Y VERIFICAR !!!
+    if(!req.body){
+        res.status(400).send({error: true, status: 400, message: ""});
+    }
 });
 
 https.createServer({
