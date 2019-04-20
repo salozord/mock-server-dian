@@ -9,8 +9,8 @@ const https = require('https');
 const app = express();
 const port = process.env.PORT || 8080;
 
-var certificado = x509.parseCert(fs.readFileSync('files/mock.cert'));
-// var llavePrivada = x509.parseKey(fs.readFileSync('files/mock.key'));
+var certificado = x509.parseCert(process.env.CERTIFICATE || fs.readFileSync('files/mock.cert'));
+// var llavePrivada = x509.parseKey(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
 
 // No se si esto sea necesario pero lo tengo por si acaso.
 // app.use(function (req, res, next) {
@@ -30,7 +30,7 @@ app.get('/api', function(req, res) {
 app.get('/certificate', function (req, res) {
     console.log('[GET] (ruta: "/certificate") - Inició petición por el certificado');
 
-    let cert = fs.readFileSync('files/mock.cert').toString('utf-8');
+    let cert = process.env.CERTIFICATE || fs.readFileSync('files/mock.cert').toString('utf-8');
     res.status(200).send(cert);
 
     console.log('[GET] (ruta: "/certificate") - Éxito(200): ¡Certificado enviado éxitosamente!');
