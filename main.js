@@ -10,7 +10,7 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 var certificado = x509.parseCert(process.env.CERTIFICATE || fs.readFileSync('files/mock.cert'));
-// var llavePrivada = x509.parseKey(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
+var llavePrivada = x509.parseKey(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
 
 // No se si esto sea necesario pero lo tengo por si acaso.
 // app.use(function (req, res, next) {
@@ -28,36 +28,41 @@ app.get('/api', function(req, res) {
 
 //Punto de acceso para dar el certificado si es necesario
 app.get('/api/certificate', function (req, res) {
-    console.log('[GET] (ruta: "/certificate") - Inició petición por el certificado');
+    console.log('[GET] (ruta: "/api/certificate") - Inició petición por el certificado');
 
     let cert = process.env.CERTIFICATE || fs.readFileSync('files/mock.cert').toString('utf-8');
     res.status(200).send(cert);
 
-    console.log('[GET] (ruta: "/certificate") - Éxito(200): ¡Certificado enviado éxitosamente!');
+    console.log('[GET] (ruta: "/api/certificate") - Éxito(200): ¡Certificado enviado éxitosamente!');
 });
 
 // Punto de acceso para recibir las facturas
 app.post('/api/facturas', function (req, res) {
-    console.log('[POST] (ruta: "/api") - Inició recepción de factura');
+    console.log('[POST] (ruta: "/api/facturas") - Inició recepción de factura');
     let data = req.body;
     if(!data) {
-        console.log('[POST] (ruta: "/api") - Error(400): No se realizó bien la petición. Se envió: ' + data);
+        console.log('[POST] (ruta: "/api/facturas") - Error(400): No se realizó bien la petición. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - No se realizó bien la petición. No se envió factura alguna."});
     }
     if(data.xml == undefined || data.firma == undefined || data.certificado == undefined) {
-        console.log('[POST] (ruta: "/api") - Error(400): No se envió bien la información. Se envió: ' + data);
+        console.log('[POST] (ruta: "/api/facturas") - Error(400): No se envió bien la información. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - Se envió información pero incorrectamente."});
     }
     
-    //COSAS PARA FACTURAS Y VERIFICAR !!!
+    // TODO: COSAS PARA FACTURAS Y VERIFICAR !!!
     
-    
-    console.log('[POST] (ruta: "/api") - ¡Factura recibida éxitosamente!');
+    console.log('[POST] (ruta: "/api/facturas") - ¡Factura recibida éxitosamente!');
 });
 
-https.createServer({
-    key: process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'),
-    cert: process.env.CERTIFICATE || fs.readFileSync('files/mock.cert')
-}, app).listen(port, () => {
+// COMO QUE NO FUNCIONA ASÍ, COMO SUPONÍA... :(
+// https.createServer({
+//     key: process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'),
+//     cert: process.env.CERTIFICATE || fs.readFileSync('files/mock.cert')
+// }, app).listen(port, () => {
+//     console.log('App listening on port ' + port);
+// });
+
+// ESTO SI DEBE SERVIR
+app.listen(port, () => {
     console.log('App listening on port ' + port);
 });
