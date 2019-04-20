@@ -56,8 +56,8 @@ app.post('/api/facturas', function (req, res) {
 });
 
 https.createServer({
-    key: fs.readFileSync('files/mock.key'),
-    cert: fs.readFileSync('files/mock.cert')
+    key: process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'),
+    cert: process.env.CERTIFICATE || fs.readFileSync('files/mock.cert')
 }, app).listen(port, () => {
     console.log('App listening on port ' + port);
 });
