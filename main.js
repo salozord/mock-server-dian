@@ -21,13 +21,13 @@ var certificado = x509.parseCert(process.env.CERTIFICATE || fs.readFileSync('fil
 
 //Punto de acceso raíz (no hace nada realmente)
 app.get('/api', function(req, res) {
-    console.log('[GET] (ruta: "/") - Inició petición a la raíz');
+    console.log('[GET] (ruta: "/api") - Inició petición a la raíz');
     res.status(200).send('Servidor Mock DIAN sirviendo!');
-    console.log('[GET] (ruta: "/") - Éxito(200): ¡Petición a la raíz finalizada éxitosamente!');
+    console.log('[GET] (ruta: "/api") - Éxito(200): ¡Petición a la raíz finalizada éxitosamente!');
 });
 
 //Punto de acceso para dar el certificado si es necesario
-app.get('/certificate', function (req, res) {
+app.get('/api/certificate', function (req, res) {
     console.log('[GET] (ruta: "/certificate") - Inició petición por el certificado');
 
     let cert = process.env.CERTIFICATE || fs.readFileSync('files/mock.cert').toString('utf-8');
