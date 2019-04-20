@@ -37,21 +37,21 @@ app.get('/api/certificate', function (req, res) {
 });
 
 // Punto de acceso para recibir las facturas
-app.post('/api/facturas', function (req, res) {
-    console.log('[POST] (ruta: "/api/facturas") - Inició recepción de factura');
+app.post('/api/bills', function (req, res) {
+    console.log('[POST] (ruta: "/api/bills") - Inició recepción de factura');
     let data = req.body;
     if(!data) {
-        console.log('[POST] (ruta: "/api/facturas") - Error(400): No se realizó bien la petición. Se envió: ' + data);
+        console.log('[POST] (ruta: "/api/bills") - Error(400): No se realizó bien la petición. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - No se realizó bien la petición. No se envió factura alguna."});
     }
     if(data.xml == undefined || data.firma == undefined || data.certificado == undefined) {
-        console.log('[POST] (ruta: "/api/facturas") - Error(400): No se envió bien la información. Se envió: ' + data);
+        console.log('[POST] (ruta: "/api/bills") - Error(400): No se envió bien la información. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - Se envió información pero incorrectamente."});
     }
     
     // TODO: COSAS PARA FACTURAS Y VERIFICAR !!!
     
-    console.log('[POST] (ruta: "/api/facturas") - ¡Factura recibida éxitosamente!');
+    console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
 });
 
 // COMO QUE NO FUNCIONA ASÍ, COMO SUPONÍA... :(
