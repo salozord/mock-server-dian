@@ -20,7 +20,7 @@ var certificado = x509.parseCert(fs.readFileSync('files/mock.cert'));
 // });
 
 //Punto de acceso raíz (no hace nada realmente)
-app.get('/', function(req, res) {
+app.get('/api', function(req, res) {
     console.log('[GET] (ruta: "/") - Inició petición a la raíz');
     res.status(200).send('Servidor Mock DIAN sirviendo!');
     console.log('[GET] (ruta: "/") - Éxito(200): ¡Petición a la raíz finalizada éxitosamente!');
@@ -37,7 +37,7 @@ app.get('/certificate', function (req, res) {
 });
 
 // Punto de acceso para recibir las facturas
-app.post('/api', function (req, res) {
+app.post('/api/facturas', function (req, res) {
     console.log('[POST] (ruta: "/api") - Inició recepción de factura');
     let data = req.body;
     if(!data) {
