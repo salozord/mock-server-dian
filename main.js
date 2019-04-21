@@ -1,25 +1,18 @@
 const express = require('express');
 const fs = require('fs');
-const x509 = require('x509.js');
+const fernet = require('.\\fernet');
+//const x509 = require('x509.js');
+const { Certificate, PrivateKey } = require('@fidm/x509');
 const crypto = require('crypto');
-const hash = crypto.createHash('sha256');
+//const hash = crypto.createHash('sha256');
 const bodyParser = require('body-parser');
-// const http = require('http');
-// const https = require('https');
 
 const app = express();
 const port = process.env.PORT || 8080;
 
+var certificado = Certificate.fromPEM(process.env.CERTIFICATE || fs.readFileSync('files/mock.cert'));
+var llavePrivada = PrivateKey.fromPEM(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
 
-var certificado = x509.parseCert(process.env.CERTIFICATE || fs.readFileSync('files/mock.cert'));
-var llavePrivada = x509.parseKey(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
-
-// No se si esto sea necesario pero lo tengo por si acaso.
-// app.use(function (req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-// });
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -57,6 +50,27 @@ app.post('/api/bills', function (req, res, next) {
     }
     
     // TODO: COSAS PARA FACTURAS Y VERIFICAR !!!
+    // CRISTIAN ME MANDA LA LLAVE DE SESION CIFRADA CON MI PUBLICA
+    // EL XML CIFRADO CON LA LLAVE DE SESION
+    // EL CERTIFICADO CONTIENE SU PUBLICA Y
+    // LA FIRMA ESTA CON SHA256 Y ME MANDA EL HASH DEL XML CIFRADO CON SU LLAVE PRIVADA
+
+    // RSA, SHA256, FERNET
+
+    // 1. Obtengo la llave de sesión y la dejo en base64
+    let sesion = data.key;
+    sesion = Buffer.from(sesion, 'hex').toString('base64');
+    sesion = desencriptar(sesion, llavePrivada.toPEM()); // REVISAR PORQUE PUEDE SER POR CRISTIAN
+    sesion = Buffer.from(sesion, 'utf8').toString('base64');
+
+    // 2. Obtengo el xml limpio
+    let xml = data.xml;
+    xml = Buffer.from(xml, 'hex').toString('base64');
+    xml = descifrarFernet(xml, sesion);
+
+
+
+
     res.status(200).send({error: false, status: 200, message: "¡Factura recibida éxitosamente!"});
     
     console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
@@ -83,9 +97,9 @@ app.listen(port, () => {
  * @param {string} data Los datos a encriptar
  * @param {Buffer} llave La llave a usar para encriptar
  */
-function encriptar(data, llavePublica) {
+function encriptar(data, llave) {
     let buffer = Buffer.from(data);
-    let encrypted = crypto.publicEncrypt(llavePublica, buffer);
+    let encrypted = crypto.publicEncrypt(llave, buffer);
     return encrypted.toString("base64");
 }
 
@@ -98,4 +112,19 @@ function desencriptar(data, llave) {
     var buffer = Buffer.from(data, "base64");
     var decrypted = crypto.privateDecrypt(llave, buffer);
     return decrypted.toString("utf8");
+}
+
+/**
+ * Descifra datos según una llave (siguiendo algoritmo de Fernet)
+ * @param {string} data Los datos a descifrar (EN BASE64)
+ * @param {string} secreto El secreto (llave) a usar (EN BASE64)
+ */
+function descifrarFernet(data, secreto) {
+    let secret = new fernet.Secret(secreto);
+    let token = new fernet.Token({
+        secret: secret,
+        token: data,
+        ttl: 0
+    });
+    return token.decode().toString('utf8');
 }
