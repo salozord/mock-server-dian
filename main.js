@@ -1,6 +1,6 @@
 const express = require('express');
 const fs = require('fs');
-const fernet = require('.\\fernet');
+const fernet = require('fernet');
 //const x509 = require('x509.js');
 const { Certificate, PrivateKey } = require('@fidm/x509');
 const crypto = require('crypto');
