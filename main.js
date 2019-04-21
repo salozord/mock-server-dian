@@ -13,11 +13,11 @@ var certificado = x509.parseCert(process.env.CERTIFICATE || fs.readFileSync('fil
 var llavePrivada = x509.parseKey(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
 
 // No se si esto sea necesario pero lo tengo por si acaso.
-// app.use(function (req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-// });
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 //Punto de acceso raíz (no hace nada realmente)
 app.get('/api', function(req, res) {
@@ -37,19 +37,22 @@ app.get('/api/certificate', function (req, res) {
 });
 
 // Punto de acceso para recibir las facturas
-app.post('/api/bills', function (req, res) {
+app.post('/api/bills', function (req, res, next) {
     console.log('[POST] (ruta: "/api/bills") - Inició recepción de factura');
     let data = req.body;
     if(!data) {
         console.log('[POST] (ruta: "/api/bills") - Error(400): No se realizó bien la petición. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - No se realizó bien la petición. No se envió factura alguna."});
+        return next();
     }
-    if(data.xml == undefined || data.firma == undefined || data.certificado == undefined) {
+    if(data.xml == undefined || data.firma == undefined || data.certificado == undefined || data.key == undefined) {
         console.log('[POST] (ruta: "/api/bills") - Error(400): No se envió bien la información. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - Se envió información pero incorrectamente."});
+        return next();
     }
     
     // TODO: COSAS PARA FACTURAS Y VERIFICAR !!!
+
     
     console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
 });
@@ -66,3 +69,28 @@ app.post('/api/bills', function (req, res) {
 app.listen(port, () => {
     console.log('App listening on port ' + port);
 });
+
+// FUNCIONES ÚTILES
+// -----------------------------------------------------------------------
+
+/**
+ * Encripta datos según una llave
+ * @param {string} data Los datos a encriptar
+ * @param {Buffer} llave La llave a usar para encriptar
+ */
+function encriptar(data, llavePublica) {
+    let buffer = Buffer.from(data);
+    let encrypted = crypto.publicEncrypt(llavePublica, buffer);
+    return encrypted.toString("base64");
+}
+
+/**
+ * Desencripta datos según una llave
+ * @param {string} data Los datos a desencriptar
+ * @param {Buffer} llave La llave a usar para desencriptar
+ */
+function desencriptar(data, llave) {
+    var buffer = Buffer.from(data, "base64");
+    var decrypted = crypto.privateDecrypt(llave, buffer);
+    return decrypted.toString("utf8");
+}
