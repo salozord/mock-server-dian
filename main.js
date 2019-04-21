@@ -4,7 +4,8 @@ const fernet = require('.\\fernet');
 //const x509 = require('x509.js');
 const { Certificate, PrivateKey } = require('@fidm/x509');
 const crypto = require('crypto');
-//const hash = crypto.createHash('sha256');
+const verify = crypto.createVerify('SHA256');
+const hash = crypto.createHash('SHA256');
 const bodyParser = require('body-parser');
 
 const app = express();
@@ -60,7 +61,7 @@ app.post('/api/bills', function (req, res, next) {
     // 1. Obtengo la llave de sesión y la dejo en base64
     let sesion = data.key;
     //sesion = Buffer.from(sesion, 'hex').toString('base64');
-    sesion = desencriptarPrivada(sesion, llavePrivada.toPEM()); // REVISAR PORQUE PUEDE SER POR CRISTIAN
+    sesion = desencriptarPrivada(sesion, llavePrivada.toPEM()); // REVISAR PORQUE PUEDE SER POR CRISTIAN POR PADDINGS
     sesion = Buffer.from(sesion, 'utf8').toString('base64');
 
     // 2. Obtengo el xml limpio
@@ -70,27 +71,29 @@ app.post('/api/bills', function (req, res, next) {
     console.log(xml); // Acá ya debería ser el xml legible
 
     // 3. Obtengo el certificado y saco la llave pública de ahí
-    let cert = Buffer.from(data.certificado, 'hex').toString('utf8');
-    cert = Certificate.fromPEM(Buffer.from(cert)); // REVISAR QUE SE LE MANDE EN FORMATO PEM
+    let info = Buffer.from(data.certificado, 'hex').toString('utf8');
+    let cert = Certificate.fromPEM(Buffer.from(info)); // REVISAR QUE SE LE MANDE EN FORMATO PEM
 
     // 4. Obtengo la firma, la descifro y comparo
-    let sign = data.firma;
+    let sign = data.firma; 
+    hash.update(xml);
+    let h = hash.digest('hex'); //REVISAR PORQUE CRISTIAN FIRMA DOBLE
+    verify.update(h);
+    verify.end();
+    let verificacion = verify.verify(cert.publicKey.toPEM(), sign);
 
+    if(!verificacion) {
+        console.log('[POST] (ruta: "/api/bills") - Error(412): Se intentó verificar pero hubo un error de integridad. No coincide la firma.');
+        res.status(412).send({error: true, status: 412, message: "(412) Precondition Failed - Se intentó verificar pero hubo un error de integridad. No coincide la firma."});
+        return next();
+    }
 
     res.status(200).send({error: false, status: 200, message: "¡Factura recibida éxitosamente!"});
     
     console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
 });
 
-// COMO QUE NO FUNCIONA ASÍ, COMO SUPONÍA... :(
-// https.createServer({
-//     key: process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'),
-//     cert: process.env.CERTIFICATE || fs.readFileSync('files/mock.cert')
-// }, app).listen(port, () => {
-//     console.log('App listening on port ' + port);
-// });
-
-// ESTO SI DEBE SERVIR
+// ESCUCHA
 app.listen(port, () => {
     console.log('App listening on port ' + port);
 });
