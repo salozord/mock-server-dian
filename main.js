@@ -57,7 +57,7 @@ app.post('/api/bills', function (req, res, next) {
     }
     
     // TODO: COSAS PARA FACTURAS Y VERIFICAR !!!
-
+    res.status(200).send({error: false, status: 200, message: "¡Factura recibida éxitosamente!"});
     
     console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
 });
