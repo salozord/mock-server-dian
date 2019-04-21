@@ -43,8 +43,7 @@ app.get('/api/certificate', function (req, res) {
 // Punto de acceso para recibir las facturas
 app.post('/api/bills', function (req, res, next) {
     console.log('[POST] (ruta: "/api/bills") - Inició recepción de factura');
-    console.log(req);
-    console.log(req.headers);
+
     let data = req.body;
     if(!data) {
         console.log('[POST] (ruta: "/api/bills") - Error(400): No se realizó bien la petición. Se envió: ' + data);
