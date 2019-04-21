@@ -3,21 +3,25 @@ const fs = require('fs');
 const x509 = require('x509.js');
 const crypto = require('crypto');
 const hash = crypto.createHash('sha256');
-const http = require('http');
-const https = require('https');
+const bodyParser = require('body-parser');
+// const http = require('http');
+// const https = require('https');
 
 const app = express();
 const port = process.env.PORT || 8080;
+
 
 var certificado = x509.parseCert(process.env.CERTIFICATE || fs.readFileSync('files/mock.cert'));
 var llavePrivada = x509.parseKey(process.env.PRIVATE_KEY || fs.readFileSync('files/mock.key'));
 
 // No se si esto sea necesario pero lo tengo por si acaso.
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
+// app.use(function (req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//     next();
+// });
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 //Punto de acceso raíz (no hace nada realmente)
 app.get('/api', function(req, res) {
