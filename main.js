@@ -27,7 +27,7 @@ app.get('/api', function(req, res) {
 app.get('/api/certificate', function (req, res) {
     console.log('[GET] (ruta: "/api/certificate") - Inició petición por el certificado');
 
-    let cert = process.env.CERTIFICATE || fs.readFileSync('files/mock.cert').toString('utf-8');
+    let cert = process.env.CERTIFICATE || certificado.toString('utf-8');
     res.status(200).send(cert);
 
     console.log('[GET] (ruta: "/api/certificate") - Éxito(200): ¡Certificado enviado éxitosamente!');
@@ -43,7 +43,7 @@ app.post('/api/bills', function (req, res, next) {
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - No se realizó bien la petición. No se envió factura alguna."});
         return next();
     }
-    if(data.xml == undefined || data.firma == undefined || data.certificado == undefined || data.key == undefined) {
+    if(!data.xml || !data.firma|| !data.certificado || !data.key) {
         console.log('[POST] (ruta: "/api/bills") - Error(400): No se envió bien la información. Se envió: ' + data);
         res.status(400).send({error: true, status: 400, message: "(400) Bad Request - Se envió información pero incorrectamente."});
         return next();
@@ -59,16 +59,22 @@ app.post('/api/bills', function (req, res, next) {
 
     // 1. Obtengo la llave de sesión y la dejo en base64
     let sesion = data.key;
-    sesion = Buffer.from(sesion, 'hex').toString('base64');
-    sesion = desencriptar(sesion, llavePrivada.toPEM()); // REVISAR PORQUE PUEDE SER POR CRISTIAN
+    //sesion = Buffer.from(sesion, 'hex').toString('base64');
+    sesion = desencriptarPrivada(sesion, llavePrivada.toPEM()); // REVISAR PORQUE PUEDE SER POR CRISTIAN
     sesion = Buffer.from(sesion, 'utf8').toString('base64');
 
     // 2. Obtengo el xml limpio
     let xml = data.xml;
     xml = Buffer.from(xml, 'hex').toString('base64');
     xml = descifrarFernet(xml, sesion);
+    console.log(xml); // Acá ya debería ser el xml legible
 
+    // 3. Obtengo el certificado y saco la llave pública de ahí
+    let cert = Buffer.from(data.certificado, 'hex').toString('utf8');
+    cert = Certificate.fromPEM(Buffer.from(cert)); // REVISAR QUE SE LE MANDE EN FORMATO PEM
 
+    // 4. Obtengo la firma, la descifro y comparo
+    let sign = data.firma;
 
 
     res.status(200).send({error: false, status: 200, message: "¡Factura recibida éxitosamente!"});
@@ -93,25 +99,25 @@ app.listen(port, () => {
 // -----------------------------------------------------------------------
 
 /**
- * Encripta datos según una llave
- * @param {string} data Los datos a encriptar
- * @param {Buffer} llave La llave a usar para encriptar
- */
-function encriptar(data, llave) {
-    let buffer = Buffer.from(data);
-    let encrypted = crypto.publicEncrypt(llave, buffer);
-    return encrypted.toString("base64");
-}
-
-/**
- * Desencripta datos según una llave
+ * Desencripta datos según una llave privada
  * @param {string} data Los datos a desencriptar
  * @param {Buffer} llave La llave a usar para desencriptar
  */
-function desencriptar(data, llave) {
-    var buffer = Buffer.from(data, "base64");
-    var decrypted = crypto.privateDecrypt(llave, buffer);
-    return decrypted.toString("utf8");
+function desencriptarPrivada(data, llave) {
+    let buffer = Buffer.from(data, 'base64');
+    let decrypted = crypto.privateDecrypt(llave, buffer);
+    return decrypted.toString('utf8');
+}
+
+/**
+ * Desencripta datos según una llave pública
+ * @param {string} data Los datos a desencriptar
+ * @param {Buffer} llave La llave a usar para desencriptar
+ */
+function desencriptarPublica(data, llave) {
+    let buffer = Buffer.from(data, 'base64');
+    let decrypted = crypto.publicDecrypt(llave, buffer);
+    return decrypted.toString('utf8');
 }
 
 /**
