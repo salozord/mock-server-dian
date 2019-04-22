@@ -1,9 +1,9 @@
 const express = require('express');
 const fs = require('fs');
-const fernet = require('fernet');
+//const fernet = require('fernet');
 const crypto = require('crypto');
-const verify = crypto.createVerify('SHA256');
-const hash = crypto.createHash('SHA256');
+var verify = crypto.createVerify('SHA256');
+var hash = crypto.createHash('SHA256');
 const Constants = crypto.constants;
 const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
@@ -20,10 +20,6 @@ const bodyParser = require('body-parser');
 
 const app = express();
 const port = process.env.PORT || 8080;
-// console.log();
-// console.log(privateKey);
-// console.log();
-// console.log(publicKey);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -62,20 +58,18 @@ app.post('/api/bills', function (req, res, next) {
 
     try {
         // 1. Obtengo la llave de sesión
-        let sesion = data.key;
-        sesion = desencriptarPrivada(sesion, privateKey); // REVISAR PORQUE PUEDE SER POR CRISTIAN POR PADDINGS
-        console.log(sesion);
+        // let sesion = data.key;
+        // sesion = desencriptarPrivada(sesion, privateKey); // REVISAR PORQUE PUEDE SER POR CRISTIAN POR PADDINGS
+        // console.log(sesion);
         // sesion = Buffer.from(sesion, 'ascii').toString('utf8'); // REVISAR A VER SI TOCA EN ASCII ANTES
         // console.log(sesion);
 
         // 2. Obtengo el xml limpio
         let xml = data.xml;
-        xml = descifrarFernet(xml, sesion.toString('base64'));
+        //xml = descifrarFernet(xml, sesion.toString('base64'));
         console.log(xml); // Acá ya debería ser el xml legible
 
         // 3. Obtengo el certificado y saco la llave pública de ahí
-        // let info = Buffer.from(data.certificado, 'base64').toString('utf8');
-        // let cert = Certificate.fromPEM(Buffer.from(info)); // REVISAR QUE SE LE MANDE EN FORMATO PEM
         let llaveCliente = data.certificado;
 
         // 4. Obtengo la firma, la descifro y comparo
@@ -135,17 +129,17 @@ function desencriptarPublica(data, llave) {
     return decrypted.toString('utf8');
 }
 
-/**
- * Descifra datos según una llave (siguiendo algoritmo de Fernet)
- * @param {string} data Los datos a descifrar (EN BASE64)
- * @param {string} secreto El secreto (llave) a usar (EN BASE64)
- */
-function descifrarFernet(data, secreto) {
-    let secret = new fernet.Secret(secreto);
-    let token = new fernet.Token({
-        secret: secret,
-        token: data,
-        ttl: 0
-    });
-    return token.decode().toString('utf8');
-}
+// /**
+//  * Descifra datos según una llave (siguiendo algoritmo de Fernet)
+//  * @param {string} data Los datos a descifrar (EN BASE64)
+//  * @param {string} secreto El secreto (llave) a usar (EN BASE64)
+//  */
+// function descifrarFernet(data, secreto) {
+//     let secret = new fernet.Secret(secreto);
+//     let token = new fernet.Token({
+//         secret: secret,
+//         token: data,
+//         ttl: 0
+//     });
+//     return token.decode().toString('utf8');
+// }
