@@ -50,8 +50,8 @@ app.post('/api/bills', function (req, res, next) {
         res.status(400).send({ error: true, status: 400, message: "(400) Bad Request - No se realizó bien la petición. No se envió factura alguna." });
         return next();
     }
-    if (!data.xml || !data.firma || !data.certificado || !data.key) {
-        console.log('[POST] (ruta: "/api/bills") - Error(400): No se envió bien la información. Se envió: ' + data);
+    if (!data.xml || !data.firma || !data.certificado) {
+        console.log('[POST] (ruta: "/api/bills") - Error(400): No se envió bien la información. Se envió: ' + JSON.stringify(data));
         res.status(400).send({ error: true, status: 400, message: "(400) Bad Request - Se envió información pero incorrectamente." });
         return next();
     }
