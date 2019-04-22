@@ -65,12 +65,12 @@ app.post('/api/bills', function (req, res, next) {
         let sesion = data.key;
         sesion = desencriptarPrivada(sesion, privateKey); // REVISAR PORQUE PUEDE SER POR CRISTIAN POR PADDINGS
         console.log(sesion);
-        sesion = Buffer.from(sesion, 'ascii').toString('base64');
-        console.log(sesion);
+        // sesion = Buffer.from(sesion, 'ascii').toString('utf8'); // REVISAR A VER SI TOCA EN ASCII ANTES
+        // console.log(sesion);
 
         // 2. Obtengo el xml limpio
         let xml = data.xml;
-        xml = descifrarFernet(xml, sesion);
+        xml = descifrarFernet(xml, sesion.toString('base64'));
         console.log(xml); // Acá ya debería ser el xml legible
 
         // 3. Obtengo el certificado y saco la llave pública de ahí
@@ -97,7 +97,7 @@ app.post('/api/bills', function (req, res, next) {
         console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
     }
     catch (error) {
-        console.log('[POST] (ruta: "/api/bills") - Error(500): Hubo un error dentro del programa. El error fue: ' + error.message);
+        console.log('[POST] (ruta: "/api/bills") - Error(500): Hubo un error dentro del programa. El error fue: ' + error);
         res.status(500).send({ error: true, status: 500, message: `(500) Internal Server Error - Hubo un error dentro del programa. El error fue: ${error.message}` });
         return next();
     }
@@ -117,9 +117,11 @@ app.listen(port, () => {
  * @param {string} llave La llave a usar para desencriptar
  */
 function desencriptarPrivada(data, llave) {
-    let buffer = Buffer.from(data);
-    let decrypted = crypto.privateDecrypt({ key: llave, padding: Constants.RSA_PKCS1_OAEP_PADDING }, buffer);
-    return decrypted.toString('ascii');
+    let buffer = Buffer.from(data, 'base64');
+    // let decrypted = crypto.privateDecrypt({ key: llave, padding: Constants.RSA_PKCS1_PADDING }, buffer);
+    let decrypted = crypto.privateDecrypt(llave, buffer);
+    //return decrypted.toString('ascii');
+    return decrypted;
 }
 
 /**
