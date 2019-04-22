@@ -74,8 +74,9 @@ app.post('/api/bills', function (req, res, next) {
         console.log(xml); // Acá ya debería ser el xml legible
 
         // 3. Obtengo el certificado y saco la llave pública de ahí
-        let info = Buffer.from(data.certificado, 'base64').toString('utf8');
-        let cert = Certificate.fromPEM(Buffer.from(info)); // REVISAR QUE SE LE MANDE EN FORMATO PEM
+        // let info = Buffer.from(data.certificado, 'base64').toString('utf8');
+        // let cert = Certificate.fromPEM(Buffer.from(info)); // REVISAR QUE SE LE MANDE EN FORMATO PEM
+        let llaveCliente = data.certificado;
 
         // 4. Obtengo la firma, la descifro y comparo
         let sign = data.firma;
@@ -83,7 +84,7 @@ app.post('/api/bills', function (req, res, next) {
         let h = hash.digest('hex'); //REVISAR PORQUE CRISTIAN FIRMA DOBLE
         verify.update(h);
         verify.end();
-        let verificacion = verify.verify(cert.publicKey.toPEM(), sign);
+        let verificacion = verify.verify(llaveCliente, sign);
 
         if (!verificacion) {
             console.log('[POST] (ruta: "/api/bills") - Error(412): Se intentó verificar pero hubo un error de integridad. No coincide la firma.');
