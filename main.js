@@ -2,8 +2,8 @@ const express = require('express');
 const fs = require('fs');
 //const fernet = require('fernet');
 const crypto = require('crypto');
-var verify = crypto.createVerify('SHA256');
-var hash = crypto.createHash('SHA256');
+var verify;
+var hash;
 const Constants = crypto.constants;
 const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
@@ -67,18 +67,23 @@ app.post('/api/bills', function (req, res, next) {
         // 2. Obtengo el xml limpio
         let xml = data.xml;
         //xml = descifrarFernet(xml, sesion.toString('base64'));
-        console.log(xml); // Acá ya debería ser el xml legible
+        // console.log(xml); // Acá ya debería ser el xml legible
 
         // 3. Obtengo el certificado y saco la llave pública de ahí
         let llaveCliente = data.certificado;
 
         // 4. Obtengo la firma, la descifro y comparo
+        hash = crypto.createHash('SHA256');
+        verify = crypto.createVerify('SHA256');
         let sign = data.firma;
         hash.update(xml);
         let h = hash.digest('hex'); //REVISAR PORQUE CRISTIAN FIRMA DOBLE
-        verify.update(h);
+        console.log(h); // h es hasheado de cristian
+
+        verify.update(h); // Revisar
         verify.end();
         let verificacion = verify.verify(llaveCliente, sign);
+        console.log(verificacion);
 
         if (!verificacion) {
             console.log('[POST] (ruta: "/api/bills") - Error(412): Se intentó verificar pero hubo un error de integridad. No coincide la firma.');
