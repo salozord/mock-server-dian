@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 //const fernet = require('fernet');
 const crypto = require('crypto');
-var verify;
+var verifier;
 var hash;
 const Constants = crypto.constants;
 const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
@@ -57,32 +57,23 @@ app.post('/api/bills', function (req, res, next) {
     }
 
     try {
-        // 1. Obtengo la llave de sesión
-        // let sesion = data.key;
-        // sesion = desencriptarPrivada(sesion, privateKey); // REVISAR PORQUE PUEDE SER POR CRISTIAN POR PADDINGS
-        // console.log(sesion);
-        // sesion = Buffer.from(sesion, 'ascii').toString('utf8'); // REVISAR A VER SI TOCA EN ASCII ANTES
-        // console.log(sesion);
-
-        // 2. Obtengo el xml limpio
+        // 1. Obtengo el xml limpio
         let xml = data.xml;
-        //xml = descifrarFernet(xml, sesion.toString('base64'));
-        // console.log(xml); // Acá ya debería ser el xml legible
 
-        // 3. Obtengo el certificado y saco la llave pública de ahí
+        // 2. Obtengo la llave del cliente
         let llaveCliente = data.certificado;
 
-        // 4. Obtengo la firma, la descifro y comparo
+        // 3. Obtengo la firma, la descifro y comparo
         hash = crypto.createHash('SHA256');
-        verify = crypto.createVerify('SHA256');
+        verifier = crypto.createVerify('SHA256');
         let sign = data.firma;
-        hash.update(xml);
-        let h = hash.digest('hex'); //REVISAR PORQUE CRISTIAN FIRMA DOBLE
-        console.log(h); // h es hasheado de cristian
 
-        verify.update(h); // Revisar
-        verify.end();
-        let verificacion = verify.verify(llaveCliente, sign);
+        hash.update(xml);
+        let h = hash.digest('hex');
+
+        verifier.update(h);
+        verifier.end();
+        let verificacion = verifier.verify({ algorithm: 'rsa', key: llaveCliente, type: publicKey, padding: Constants.RSA_PKCS1_PSS_PADDING, saltLength:Constants.RSA_PSS_SALTLEN_MAX_SIGN }, sign, 'hex');
         console.log(verificacion);
 
         if (!verificacion) {
@@ -93,7 +84,7 @@ app.post('/api/bills', function (req, res, next) {
 
         res.status(200).send({ error: false, status: 200, message: "¡Factura recibida éxitosamente!" });
 
-        console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente!');
+        console.log('[POST] (ruta: "/api/bills") - ¡Factura recibida éxitosamente! ¡Se verificó y es completamente integra! :D');
     }
     catch (error) {
         console.log('[POST] (ruta: "/api/bills") - Error(500): Hubo un error dentro del programa. El error fue: ' + error);
@@ -106,45 +97,3 @@ app.post('/api/bills', function (req, res, next) {
 app.listen(port, () => {
     console.log('App listening on port ' + port);
 });
-
-// FUNCIONES ÚTILES
-// -----------------------------------------------------------------------
-
-/**
- * Desencripta datos según una llave privada
- * @param {string} data Los datos a desencriptar
- * @param {string} llave La llave a usar para desencriptar
- */
-function desencriptarPrivada(data, llave) {
-    let buffer = Buffer.from(data, 'base64');
-    // let decrypted = crypto.privateDecrypt({ key: llave, padding: Constants.RSA_PKCS1_PADDING }, buffer);
-    let decrypted = crypto.privateDecrypt(llave, buffer);
-    //return decrypted.toString('ascii');
-    return decrypted;
-}
-
-/**
- * Desencripta datos según una llave pública
- * @param {string} data Los datos a desencriptar
- * @param {string} llave La llave a usar para desencriptar
- */
-function desencriptarPublica(data, llave) {
-    let buffer = Buffer.from(data, 'base64');
-    let decrypted = crypto.publicDecrypt(llave, buffer);
-    return decrypted.toString('utf8');
-}
-
-// /**
-//  * Descifra datos según una llave (siguiendo algoritmo de Fernet)
-//  * @param {string} data Los datos a descifrar (EN BASE64)
-//  * @param {string} secreto El secreto (llave) a usar (EN BASE64)
-//  */
-// function descifrarFernet(data, secreto) {
-//     let secret = new fernet.Secret(secreto);
-//     let token = new fernet.Token({
-//         secret: secret,
-//         token: data,
-//         ttl: 0
-//     });
-//     return token.decode().toString('utf8');
-// }
